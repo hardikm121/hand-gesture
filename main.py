@@ -1,80 +1,73 @@
-import cv2
-import mediapipe as mp
-import pyautogui
+import cv2  # Computer vision library
+import mediapipe as mp  # Hand detection ke liye
+import pyautogui  # Screen cursor control ke liye
 
-mp_hands = mp.solutions.hands
-hands = mp_hands.Hands()
+mp_hands = mp.solutions.hands  # MediaPipe hands module
+hands = mp_hands.Hands()  # Hand detection initialize kara
+mp_drawing = mp.solutions.drawing_utils  # Hand landmarks draw karne ke liye
 
-mp_drawing = mp.solutions.drawing_utils
+screen_width, screen_height = pyautogui.size()  # Screen ki size li
 
-screen_width, screen_height = pyautogui.size()
+def main():
+    cap = cv2.VideoCapture(0)  # Video capture start kari
+    prev_x = None  # Swipe detection ke liye pehle ka x-coordinate
+    prev_y = None  # Swipe detection ke liye pehle ka y-coordinate
 
-cap = cv2.VideoCapture(0)
-prev_x = None
-prev_y = None
-# initial_dist = None
-while cap.isOpened():
-    ret, frame = cap.read()
+    while cap.isOpened():  # Jab tak camera open hai
+        ret, frame = cap.read()  # Camera se frame liya
+        frame = cv2.flip(frame, 1)  # Image ko mirror karo 
+        rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)  # RGB mein convert kara for mediapipe
+        results = hands.process(rgb_frame)  # Frame mein hand detect karo
 
-    # mirror image
-    frame = cv2.flip(frame, 1)
+        if results.multi_hand_landmarks:  # Agar hands detect hue
+            for landmarks in results.multi_hand_landmarks:
+                # Check karo ki hand left hai ya right
+                handedness = results.multi_handedness[results.multi_hand_landmarks.index(landmarks)].classification[0].label
+                mp_drawing.draw_landmarks(frame, landmarks, mp_hands.HAND_CONNECTIONS)  # Frame par hand landmarks draw karo
 
-    # Convert to rgb --bgr is cv ka default...convert to rgb bcs mediapipe rgb me operate krta hai
-    rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-    results = hands.process(rgb_frame)  # hand landmarks detect krne ko
-    if results.multi_hand_landmarks:  # agar hands detect hue to
-        for landmarks in results.multi_hand_landmarks:
-            # hand check krne ko
-            handedness =   results.multi_handedness[results.multi_hand_landmarks.index(landmarks)].classification[0].label
+                index_tip = landmarks.landmark[mp_hands.HandLandmark.INDEX_FINGER_TIP]  # Index finger tip
+                index_mid = landmarks.landmark[mp_hands.HandLandmark.INDEX_FINGER_PIP]  # Index finger middle
 
-            mp_drawing.draw_landmarks(frame, landmarks, mp_hands.HAND_CONNECTIONS)
-            # draws hand landmarks and connections on the frame
-            index_tip = landmarks.landmark[mp_hands.HandLandmark.INDEX_FINGER_TIP]
-            index_mid = landmarks.landmark[mp_hands.HandLandmark.INDEX_FINGER_PIP]
+                if handedness == "Left":  # Agar left hand hai
+                    mcp_x = landmarks.landmark[mp_hands.HandLandmark.MIDDLE_FINGER_MCP].x  # Middle finger ka x-coordinate
+                    mcp_y = landmarks.landmark[mp_hands.HandLandmark.MIDDLE_FINGER_MCP].y  # Middle finger ka y-coordinate
 
-            if handedness == "Left":  # left mouse
+                    scaling_factor = 1  # Sensitivity adjust karne ke liye
+                    cursor_x = int(mcp_x * screen_width * scaling_factor)  # Cursor ka x-position calculate kara
+                    cursor_y = int(mcp_y * screen_height * scaling_factor)  # Cursor ka y-position calculate kara
+                    pyautogui.moveTo(cursor_x, cursor_y, duration=0.1)  # Cursor ko move karne ke lia
 
-                # if initial_dist is None:
-                #     initial_dist = index_tip.y - index_mid.y
+                    if index_tip.y >= index_mid.y:  # Agar index tip middle se neeche hai to click kara
+                        pyautogui.click()
 
-                mcp_x = landmarks.landmark[mp_hands.HandLandmark.MIDDLE_FINGER_MCP].x
-                mcp_y = landmarks.landmark[mp_hands.HandLandmark.MIDDLE_FINGER_MCP].y
+                elif handedness == "Right":  # Agar right hand hai
+                    x, y = int(index_tip.x * screen_width), int(index_tip.y * screen_height)  # Finger tip ke coordinates
 
-                scaling_factor = 1  # Adjust this value to decrease sensitivity
+                    if prev_x is not None and prev_y is not None:  # Agar pehle ka position hai
+                        dx = x - prev_x  # X ka change calculate karo
+                        dy = y - prev_y  # Y ka change calculate karo
 
-                cursor_x = int(mcp_x * screen_width * scaling_factor)
-                cursor_y = int(mcp_y * screen_height * scaling_factor)
+                        if abs(dx) > abs(dy):  # Agar horizontal swipe hai
+                            if dx > 50:
+                                pyautogui.press('right')  # Right swipe
+                            elif dx < -50:
+                                pyautogui.press('left')  # Left swipe
+                        else:  # Agar vertical swipe hai
+                            if dy > 50:
+                                pyautogui.press('down')  # Down swipe
+                            elif dy < -50:
+                                pyautogui.press('up')  # Up swipe
 
-                pyautogui.moveTo(cursor_x, cursor_y, duration=0.1)
+                    prev_x = x  # Pehle ka x update karo
+                    prev_y = y  # Pehle ka y update karo
 
-                # current_dist = index_tip.y - index_mid.y
-                if index_tip.y >= index_mid.y:
-                    pyautogui.click()
+        cv2.imshow("Gesture Recognition", frame)  # Frame dikhaye
 
-            elif handedness == "Right":  # right keyboard
-                x, y = int(index_tip.x * screen_width), int(index_tip.y * screen_height)
-                if prev_x is not None and prev_y is not None:
-                    dx = x - prev_x
-                    dy = y - prev_y
+        if cv2.waitKey(10) & 0xFF == ord('q'):  # 'q' press karne par exit
+            break
 
-                    if abs(dx) > abs(dy):
-                        if dx > 50:  # right
-                            pyautogui.press('right')
-                        elif dx < -50:  # left
-                            pyautogui.press('left')
-                    else:  # Vertical swipe
-                        if dy > 50:  # down
-                            pyautogui.press('down')
-                        elif dy < -50:  # up
-                            pyautogui.press('up')
+    cap.release()  # Camera release karo
+    cv2.destroyAllWindows()  # Window close karo
 
-                prev_x = x
-                prev_y = y
-
-    cv2.imshow("Gesture Recognition", frame)
-
-    if cv2.waitKey(10) & 0xFF == ord('q'):
-        break
-
-cap.release()
-cv2.destroyAllWindows()
+if __name__ == "__main__":
+    main()  # Main function start
