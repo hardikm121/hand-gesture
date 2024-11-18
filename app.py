@@ -6,7 +6,7 @@ app = Flask(__name__)
 process = None  # To store the subprocess
 
 @app.route("/")
-def index():
+def index():  
     return render_template("index.html")  # Render the front page
 
 @app.route("/start", methods=["GET"])
@@ -54,4 +54,6 @@ def open_file():
         return jsonify({"status": "error", "message": f"Error opening file: {e}"})
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    # Ensure that the app runs on the specified port when deployed
+    port = int(os.environ.get("PORT", 5000))  # Default to 5000 if PORT is not set
+    app.run(host="0.0.0.0", port=port)
