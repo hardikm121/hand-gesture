@@ -2,3 +2,4 @@ Flask==2.3.3
 opencv-python==4.8.0.76
 mediapipe==0.10.1
 pyautogui==0.9.53
+gunicorn==20.1.0
