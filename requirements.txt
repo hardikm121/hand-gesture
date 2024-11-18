@@ -1,4 +1,4 @@
 Flask==2.3.3
 opencv-python==4.8.0.76
 mediapipe==0.10.1
-pyautogui==1.0.0
+pyautogui==0.9.53
