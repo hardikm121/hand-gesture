@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gesture Control</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        /* Global Reset */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: var(--background);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            color: var(--text-color);
+            transition: background 0.3s, color 0.3s;
+            overflow: hidden;
+            cursor: pointer;
+            position: relative;
+        }
+
+        /* Interactive Background */
+        .background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: var(--background);
+            z-index: -1;
+            pointer-events: none;
+            background-size: 400% 400%;
+            animation: gradientAnimation 8s ease infinite;
+        }
+
+        @keyframes gradientAnimation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Container and Layout */
+        .container {
+            background: var(--card-background);
+            border-radius: 25px;
+            padding: 60px 80px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+            text-align: center;
+            width: 100%;
+            max-width: 750px;
+            transform: translateY(20px);
+            animation: slideUp 0.7s ease-out;
+            transition: transform 0.3s;
+        }
+
+        @keyframes slideUp {
+            0% { transform: translateY(100px); }
+            100% { transform: translateY(0); }
+        }
+
+        h1 {
+            font-size: 52px;
+            font-weight: 700;
+            color: var(--title-color);
+            margin-bottom: 15px;
+            transition: color 0.3s ease;
+            transform: translateY(30px);
+            animation: slideIn 1s ease-out forwards;
+        }
+
+        @keyframes slideIn {
+            0% { transform: translateY(50px); opacity: 0; }
+            100% { transform: translateY(0); opacity: 1; }
+        }
+
+        p {
+            font-size: 20px;
+            color: var(--subtitle-color);
+            margin-bottom: 40px;
+            opacity: 0;
+            animation: fadeIn 1s 1s forwards;
+        }
+
+        @keyframes fadeIn {
+            0% { opacity: 0; }
+            100% { opacity: 1; }
+        }
+
+        /* Button Styles */
+        .controls button {
+            background-color: var(--button-background);
+            color: var(--button-color);
+            border: 2px solid var(--button-border-color);
+            padding: 18px 32px;
+            font-size: 22px;
+            font-weight: 600;
+            border-radius: 40px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin: 10px;
+        }
+
+        .controls button:hover {
+            background-color: var(--button-hover-background);
+            color: #fff;
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .controls button:active {
+            transform: translateY(2px);
+        }
+
+        .controls .start-btn i,
+        .controls .stop-btn i {
+            margin-right: 12px;
+            transition: transform 0.3s ease;
+        }
+
+        .controls .start-btn:hover i,
+        .controls .stop-btn:hover i {
+            transform: rotate(360deg);
+        }
+
+        /* Loader Animation */
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--button-background);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 25px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Day/Night Mode Button */
+        .theme-toggle {
+            background-color: transparent;
+            border: 2px solid var(--button-border-color);
+            color: var(--button-color);
+            padding: 14px 28px;
+            border-radius: 40px;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 30px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .theme-toggle:hover {
+            background-color: var(--button-hover-background);
+            color: #fff;
+        }
+
+        /* Light Mode Colors */
+        :root {
+            --background: linear-gradient(135deg, #6e7f80, #f8cdda);
+            --card-background: rgba(255, 255, 255, 0.85);
+            --text-color: #000;
+            --title-color: #333;
+            --subtitle-color: #555;
+            --button-background: #00B8D4;
+            --button-color: #fff;
+            --button-border-color: #007C91;
+            --button-hover-background: #007C91;
+        }
+
+        /* Dark Mode Colors */
+        .dark-mode {
+            --background: linear-gradient(135deg, #2c3e50, #34495e);
+            --card-background: rgba(40, 40, 40, 0.9);
+            --text-color: #f1f1f1;
+            --title-color: #fff;
+            --subtitle-color: #ccc;
+            --button-background: #34495e;
+            --button-color: #fff;
+            --button-border-color: #2c3e50;
+            --button-hover-background: #1a242f;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .container {
+                padding: 50px 40px;
+            }
+
+            h1 {
+                font-size: 38px;
+            }
+
+            p {
+                font-size: 18px;
+            }
+
+            .controls button {
+                padding: 16px 28px;
+                font-size: 18px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="background"></div>
+
+    <div class="container">
+        <header>
+            <h1>Gesture Control</h1>
+            <p>Control your computer effortlessly with hand gestures!</p>
+        </header>
+
+        <div class="controls">
+            <button class="start-btn" id="start-btn"><i class="fas fa-play-circle"></i> Start Gesture Control</button>
+            <button class="stop-btn" id="stop-btn" disabled><i class="fas fa-stop-circle"></i> Stop Gesture Control</button>
+            <div id="loading-spinner" class="loader" style="display:none;"></div>
+            <button class="theme-toggle" id="theme-toggle"><i class="fas fa-adjust"></i> Toggle Day/Night</button>
+        </div>
+    </div>
+
+    <script>
+        $(document).ready(function () {
+            // Start button logic
+            $("#start-btn").click(function () {
+                const startButton = $(this);
+                startButton.prop("disabled", true); // Disable the button to prevent multiple clicks
+                $("#stop-btn").prop("disabled", false); // Enable stop button
+                $("#loading-spinner").show(); // Show loading spinner
+
+                $.ajax({
+                    url: '/start',
+                    type: 'GET',
+                    success: function (response) {
+                        alert(response.message);
+                    },
+                    error: function () {
+                        alert("Failed to start gesture control.");
+                    },
+                    complete: function () {
+                        startButton.prop("disabled", false); // Re-enable the start button after the request is completed
+                        $("#loading-spinner").hide(); // Hide loading spinner
+                    }
+                });
+            });
+
+            // Stop button logic
+            $("#stop-btn").click(function () {
+                const stopButton = $(this);
+                stopButton.prop("disabled", true); // Disable the button to prevent multiple clicks
+                $("#start-btn").prop("disabled", false); // Enable start button
+                $("#loading-spinner").show(); // Show loading spinner
+
+                $.ajax({
+                    url: '/stop',
+                    type: 'GET',
+                    success: function (response) {
+                        alert(response.message);
+                    },
+                    error: function () {
+                        alert("Failed to stop gesture control.");
+                    },
+                    complete: function () {
+                        stopButton.prop("disabled", false); // Re-enable the stop button after the request is completed
+                        $("#loading-spinner").hide(); // Hide loading spinner
+                    },
+                });
+            });
+
+            // Theme toggle button logic (Light/Dark Mode)
+            $("#theme-toggle").click(function () {
+                $("body").toggleClass("dark-mode");
+            });
+        });
+    </script>
+</body>
+</html>
